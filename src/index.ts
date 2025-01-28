@@ -5,6 +5,7 @@ import cors from "cors";
 import helmet from "helmet";
 import connectDb from "./helpers/connectDb.js";
 import compression from "compression";
+import { errorMiddleware } from "./middlewares/errors/errorMiddleware.js";
 
 // Allowed origins for CORS
 const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
@@ -53,10 +54,13 @@ app.get("/api/data", (_, res) => {
     res.status(200).json({ message: "Data from the server" });
 });
 
-// 404 Handler for non-existent routes
+// 404 Handler for non-existent routes (must come after routes)
 app.use((_, res) => {
     res.status(404).json({ message: "Route not found" });
 });
+
+// Error Handling Middleware (must come after routes and 404 handler)
+app.use(errorMiddleware);
 
 // Start server
 app.listen(PORT, () => {
