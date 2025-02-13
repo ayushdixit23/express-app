@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { CustomError } from './CustomError';
+import { CustomError } from './CustomError.js';
 
 interface ErrorResponse {
-  status: string;
+  success: boolean;
   statusCode: number;
   message: string;
 }
@@ -23,7 +23,7 @@ export const errorMiddleware = (
 
   // Respond with structured error information
   const errorResponse: ErrorResponse = {
-    status: (err as CustomError).status,
+    success: (err as CustomError).success,
     statusCode: (err as CustomError).statusCode,
     message: (err as CustomError).message,
   };
