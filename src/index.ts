@@ -9,9 +9,21 @@ import { errorMiddleware } from "./middlewares/errors/errorMiddleware.js";
 import redisClient from "./helpers/redisClient.js";
 import asyncHandler from "./middlewares/tryCatch.js";
 import { CustomError } from "./middlewares/errors/CustomError.js";
+import { rateLimit } from "express-rate-limit";
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 400,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
 
 // Allowed origins for CORS
-const allowedOrigins = ["http://localhost:3000", "http://localhost:3001"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://your-production-domain.com",
+];
 
 // Initialize Express app
 const app = express();
@@ -21,6 +33,7 @@ connectDb(MONGO_URI); // Pass your MongoDB URI here
 
 // Middlewares
 app.use(helmet()); // Security headers
+app.use(limiter); // Rate limiting middleware
 
 // Logging based on environment (development/production)
 const logFormat = NODE_ENV === "development" ? "dev" : "combined";
@@ -68,27 +81,31 @@ function yourDbQuery() {
 }
 
 // Redis Cache-based route
-app.get("/api/route", asyncHandler(async (_: Request, res: Response) => {
-  // Step 1: Check if the data is already in the cache
-  const cachedData = await redisClient.get("yourCacheKey");
+app.get(
+  "/api/route",
+  asyncHandler(async (_: Request, res: Response) => {
+    // Step 1: Check if the data is already in the cache
+    const cachedData = await redisClient.get("yourCacheKey");
 
-  if (cachedData) {
-    // Step 2: If cache is found, serve data from cache
-    console.log("Data served from cache");
-    return res.status(200).json({ message: "Data from cache", data: JSON.parse(cachedData) });
-  }
+    if (cachedData) {
+      // Step 2: If cache is found, serve data from cache
+      console.log("Data served from cache");
+      return res
+        .status(200)
+        .json({ message: "Data from cache", data: JSON.parse(cachedData) });
+    }
 
-  // Step 3: If cache is missed, perform the actual DB query or heavy operation
-  const data = await yourDbQuery();
+    // Step 3: If cache is missed, perform the actual DB query or heavy operation
+    const data = await yourDbQuery();
 
-  // Step 4: Store the freshly fetched/generated data in the cache (with an expiration time)
-  redisClient.set("yourCacheKey", JSON.stringify(data), "EX", 60); // Cache for 60 seconds
+    // Step 4: Store the freshly fetched/generated data in the cache (with an expiration time)
+    redisClient.set("yourCacheKey", JSON.stringify(data), "EX", 60); // Cache for 60 seconds
 
-  // Step 5: Serve the freshly generated data to the client
-  console.log("Data served from the server");
-  return res.status(200).json({ message: "Data from the server", data });
-}));
-
+    // Step 5: Serve the freshly generated data to the client
+    console.log("Data served from the server");
+    return res.status(200).json({ message: "Data from the server", data });
+  })
+);
 
 // 404 Handler for non-existent routes (must come after routes)
 app.use((_, res) => {
