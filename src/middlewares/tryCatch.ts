@@ -1,8 +1,23 @@
 import { NextFunction, Request, Response } from "express";
 
-// asyncHandler to handle async errors properly
-const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
-  Promise.resolve(fn(req, res, next)).catch(next); // Catch asynchronous errors and forward to next middleware
+/**
+ * Type for async route handlers
+ */
+type AsyncRequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => Promise<void | Response>;
+
+/**
+ * Wrapper for async route handlers to catch errors and pass them to error middleware
+ * @param fn - The async route handler function
+ * @returns Express middleware function
+ */
+const asyncHandler = (fn: AsyncRequestHandler) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 };
 
 export default asyncHandler;

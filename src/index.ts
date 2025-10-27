@@ -1,121 +1,134 @@
 import express, { Request, Response } from "express";
-import { NODE_ENV, PORT, MONGO_URI } from "./utils/envConfig.js";
+import { 
+  NODE_ENV, 
+  PORT, 
+  MONGO_URI, 
+  ALLOWED_ORIGINS,
+  RATE_LIMIT_WINDOW_MS,
+  RATE_LIMIT_MAX_REQUESTS
+} from "./utils/envConfig.js";
 import morgan from "morgan";
 import cors from "cors";
 import helmet from "helmet";
 import connectDb from "./helpers/connectDb.js";
 import compression from "compression";
-import { errorMiddleware } from "./middlewares/errors/errorMiddleware.js";
-import redisClient from "./helpers/redisClient.js";
-import asyncHandler from "./middlewares/tryCatch.js";
-import { CustomError } from "./middlewares/errors/CustomError.js";
+import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { rateLimit } from "express-rate-limit";
+import routes from "./routes/index.js";
+import { setupGracefulShutdown } from "./utils/gracefulShutdown.js";
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 400,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-});
+/**
+ * Initialize Express application with all middleware and routes
+ */
+const initializeApp = async () => {
+  // Initialize Express app
+  const app = express();
 
-// Allowed origins for CORS
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "https://your-production-domain.com",
-];
+  // Security middleware - must be first
+  app.use(helmet());
 
-// Initialize Express app
-const app = express();
+  // Rate limiting middleware
+  const limiter = rateLimit({
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    limit: RATE_LIMIT_MAX_REQUESTS,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: "Too many requests from this IP, please try again later.",
+  });
+  app.use(limiter);
 
-// Connect to MongoDB
-connectDb(MONGO_URI); // Pass your MongoDB URI here
+  // Logging based on environment (development/production)
+  const logFormat = NODE_ENV === "development" ? "dev" : "combined";
+  app.use(morgan(logFormat));
 
-// Middlewares
-app.use(helmet()); // Security headers
-app.use(limiter); // Rate limiting middleware
+  // Compression middleware - compress all responses
+  app.use(compression());
 
-// Logging based on environment (development/production)
-const logFormat = NODE_ENV === "development" ? "dev" : "combined";
-app.use(morgan(logFormat));
+  // Body parsing middleware
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Compression middleware
-app.use(compression());
+  // CORS configuration
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: true,
+    })
+  );
 
-// Body parsing middleware
-app.use(express.json());
+  // Trust proxy - important for rate limiting behind reverse proxy
+  if (NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+  }
 
-// CORS configuration
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
-    allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
-    credentials: true, // Allow cookies to be sent
-  })
-);
+  // Root route
+  app.get("/", (_req: Request, res: Response) => {
+    res.status(200).json({
+      message: "🚀 Express API Server",
+      version: "1.0.0",
+      environment: NODE_ENV,
+      timestamp: new Date().toISOString(),
+    });
+  });
 
-// Routes
-app.get("/", (_, res) => {
-  res.send("Server is running!");
-});
+  // Mount API routes
+  app.use("/", routes);
 
-app.get("/api/data", (_, res) => {
-  // Send data from the server
-  res.status(200).json({ message: "Data from the server" });
-});
+  // 404 Handler for non-existent routes
+  app.use((_req: Request, res: Response) => {
+    res.status(404).json({ 
+      success: false,
+      message: "Route not found",
+      statusCode: 404
+    });
+  });
 
-app.get("/api/error", (_, res) => {
-  // throw your custom error like this
-  throw new CustomError("This is a custom error", 400);
-});
+  // Error Handling Middleware (must be last)
+  app.use(errorMiddleware);
 
-function yourDbQuery() {
-  console.log("DO SOME TASK HERE (LIKE DB QUERY)");
-}
+  return app;
+};
 
-// Redis Cache-based route
-app.get(
-  "/api/route",
-  asyncHandler(async (_: Request, res: Response) => {
-    // Step 1: Check if the data is already in the cache
-    const cachedData = await redisClient.get("yourCacheKey");
+/**
+ * Start the server
+ */
+const startServer = async () => {
+  try {
+    console.log("🚀 Starting server...\n");
 
-    if (cachedData) {
-      // Step 2: If cache is found, serve data from cache
-      console.log("Data served from cache");
-      return res
-        .status(200)
-        .json({ message: "Data from cache", data: JSON.parse(cachedData) });
-    }
+    // Connect to MongoDB
+    await connectDb(MONGO_URI);
 
-    // Step 3: If cache is missed, perform the actual DB query or heavy operation
-    const data = await yourDbQuery();
+    // Initialize Express app
+    const app = await initializeApp();
 
-    // Step 4: Store the freshly fetched/generated data in the cache (with an expiration time)
-    redisClient.set("yourCacheKey", JSON.stringify(data), "EX", 60); // Cache for 60 seconds
+    // Start HTTP server
+    const server = app.listen(PORT, () => {
+      console.log("\n" + "=".repeat(50));
+      console.log(`✅ Server is running successfully!`);
+      console.log(`🌐 URL: http://localhost:${PORT}`);
+      console.log(`📍 Environment: ${NODE_ENV}`);
+      console.log(`⏰ Started at: ${new Date().toISOString()}`);
+      console.log("=".repeat(50) + "\n");
+    });
 
-    // Step 5: Serve the freshly generated data to the client
-    console.log("Data served from the server");
-    return res.status(200).json({ message: "Data from the server", data });
-  })
-);
+    // Setup graceful shutdown
+    setupGracefulShutdown(server);
 
-// 404 Handler for non-existent routes (must come after routes)
-app.use((_, res) => {
-  res.status(404).json({ message: "Route not found" });
-});
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+};
 
-// Error Handling Middleware (must come after routes and 404 handler)
-app.use(errorMiddleware);
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-});
+// Start the server
+startServer();
