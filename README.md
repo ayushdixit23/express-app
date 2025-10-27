@@ -86,8 +86,7 @@ express-app/
 │   ├── helpers/              # Database and utility connections
 │   │   └── connectDb.ts      # MongoDB connection with event handlers
 │   ├── middlewares/          # Custom middleware
-│   │   ├── errors/           # Error handling
-│   │   │   └── errorMiddleware.ts
+│   │   ├── errorMiddleware.ts    # Error handling middleware
 │   │   ├── responseHandler.ts    # Success & Error response classes
 │   │   └── tryCatch.ts       # Async error wrapper
 │   ├── routes/               # Route definitions
