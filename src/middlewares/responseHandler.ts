@@ -1,3 +1,5 @@
+import { Response } from 'express';
+
 /**
  * Base API Response class
  */
@@ -20,6 +22,18 @@ export class SuccessResponse extends ApiResponse {
     public statusCode: number = 200
   ) {
     super(true, message, data);
+  }
+
+  /**
+   * Send the response to the client
+   */
+  send(res: Response): Response {
+    return res.status(this.statusCode).json({
+      success: this.success,
+      message: this.message,
+      statusCode: this.statusCode,
+      ...(this.data !== undefined && { data: this.data })
+    });
   }
 }
 

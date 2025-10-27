@@ -14,8 +14,7 @@ router.get("/data", asyncHandler(async (_req: Request, res: Response) => {
     info: "Sample data from server"
   };
   
-  const response = new SuccessResponse("Data retrieved successfully", data);
-  return res.status(response.statusCode).json(response);
+  return new SuccessResponse("Data retrieved successfully", data).send(res);
 }));
 
 /**
@@ -43,8 +42,7 @@ router.get(
       timestamp: new Date().toISOString()
     };
 
-    const response = new SuccessResponse("Data fetched from database", data);
-    return res.status(response.statusCode).json(response);
+    return new SuccessResponse("Data fetched from database", data).send(res);
   })
 );
 
@@ -63,8 +61,7 @@ router.post(
       createdAt: new Date().toISOString()
     };
 
-    const response = new SuccessResponse("User created successfully", newUser, 201);
-    return res.status(response.statusCode).json(response);
+    return new SuccessResponse("User created successfully", newUser, 201).send(res);
   })
 );
 
@@ -101,8 +98,7 @@ router.get(
       }
     };
 
-    const response = new SuccessResponse("Posts retrieved successfully", responseData);
-    return res.status(response.statusCode).json(response);
+    return new SuccessResponse("Posts retrieved successfully", responseData).send(res);
   })
 );
 
@@ -123,8 +119,7 @@ router.delete(
     // Simulate deletion
     // In real app: await User.deleteOne({ _id: id })
 
-    const response = new SuccessResponse(`User with ID ${id} deleted successfully`);
-    return res.status(response.statusCode).json(response);
+    return new SuccessResponse(`User with ID ${id} deleted successfully`).send(res);
   })
 );
 
@@ -150,8 +145,7 @@ router.put(
       updatedAt: new Date().toISOString()
     };
 
-    const response = new SuccessResponse("User updated successfully", updatedUser);
-    return res.status(response.statusCode).json(response);
+    return new SuccessResponse("User updated successfully", updatedUser).send(res);
   })
 );
 
@@ -170,8 +164,7 @@ router.get(
       generatedAt: new Date().toISOString()
     };
 
-    const response = new SuccessResponse("Statistics retrieved successfully", stats);
-    return res.status(response.statusCode).json(response);
+    return new SuccessResponse("Statistics retrieved successfully", stats).send(res);
   })
 );
 
