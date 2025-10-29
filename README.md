@@ -8,10 +8,11 @@ A production-ready Express.js starter template with TypeScript and MongoDB. This
 ## ✨ Features
 
 ### Core Technologies
-- **TypeScript**: Full type safety with modern JavaScript features
-- **Express.js**: Fast, unopinionated web framework
-- **MongoDB**: NoSQL database with Mongoose ODM
-- **Morgan**: HTTP request logger
+- **TypeScript** (v5.9.3): Full type safety with modern JavaScript features
+- **Express.js** (v5.1.0): Fast, unopinionated web framework
+- **MongoDB**: NoSQL database with Mongoose ODM (v8.19.2)
+- **Morgan** (v1.10.1): HTTP request logger
+- **Node.js** (v16 or higher recommended, v18+ for optimal performance)
 
 ### Production-Ready Features
 - ✅ **Class-Based Response System**: Clean API responses with `SuccessResponse` and `ErrorResponse`
@@ -31,7 +32,7 @@ A production-ready Express.js starter template with TypeScript and MongoDB. This
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v16 or higher)
+- Node.js (v18 or higher recommended)
 - npm or yarn
 - MongoDB (local or remote instance)
 
@@ -338,7 +339,7 @@ npm start
 
 ### Docker Example
 ```dockerfile
-FROM node:18-alpine
+FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
@@ -347,6 +348,8 @@ RUN npm run build
 EXPOSE 5000
 CMD ["npm", "start"]
 ```
+
+> **Note**: Using Node.js 20 LTS for better performance and long-term support. Compatible with Node.js 18+.
 
 ### Environment Setup
 - Set `NODE_ENV=production`
@@ -359,7 +362,7 @@ CMD ["npm", "start"]
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server with hot-reload |
+| `npm run dev` | Start development server with hot-reload (tsx + nodemon) |
 | `npm run build` | Compile TypeScript to JavaScript |
 | `npm start` | Run production server |
 | `npm run clean` | Remove build artifacts |
