@@ -84,8 +84,9 @@ A production-ready Express.js starter template with TypeScript and MongoDB. This
 ```
 express-app/
 ├── src/
-│   ├── helpers/              # Database and utility connections
-│   │   └── connectDb.ts      # MongoDB connection with event handlers
+│   ├── config/               # Configuration files
+│   │   ├── database.ts       # MongoDB connection with event handlers
+│   │   └── env.ts            # Environment configuration
 │   ├── middlewares/          # Custom middleware
 │   │   ├── errorMiddleware.ts    # Error handling middleware
 │   │   ├── responseHandler.ts    # Success & Error response classes
@@ -95,9 +96,9 @@ express-app/
 │   │   ├── api.routes.ts     # API routes
 │   │   └── health.routes.ts  # Health check routes
 │   ├── utils/                # Utility functions
-│   │   ├── envConfig.ts      # Environment configuration
 │   │   └── gracefulShutdown.ts   # Shutdown handler
-│   └── index.ts              # Application entry point
+│   ├── app.ts                # Express application configuration
+│   └── index.ts              # Application entry point (server startup)
 ├── dist/                     # Compiled JavaScript (generated)
 ├── env.example               # Environment variables template
 ├── package.json

@@ -51,3 +51,4 @@ export const disconnectDb = async (): Promise<void> => {
 };
 
 export default connectDb;
+

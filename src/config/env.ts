@@ -19,7 +19,7 @@ const getEnvVariable = (key: string, defaultValue: string = ""): string => {
 };
 
 // Environment Configuration
-export const PORT = getEnvVariable('PORT','5000');
+export const PORT = getEnvVariable('PORT','5001');
 export const NODE_ENV = getEnvVariable('NODE_ENV','development');
 export const MONGO_URI = getEnvVariable('MONGO_URI','mongodb://localhost:27017/your-database-name');
 
@@ -29,3 +29,4 @@ export const ALLOWED_ORIGINS = getEnvVariable('ALLOWED_ORIGINS','http://localhos
 // Rate Limiting Configuration
 export const RATE_LIMIT_WINDOW_MS = parseInt(getEnvVariable('RATE_LIMIT_WINDOW_MS','900000'), 10); // 15 minutes
 export const RATE_LIMIT_MAX_REQUESTS = parseInt(getEnvVariable('RATE_LIMIT_MAX_REQUESTS','400'), 10);
+
