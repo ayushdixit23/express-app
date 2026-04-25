@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { normalizeError } from "../core/errors/errorHandler.js";
 import { ErrorPayload } from "../core/responses/ApiResponse.js";
-import { NODE_ENV } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 
 export const errorMiddleware = (
   err: unknown,
@@ -11,16 +11,14 @@ export const errorMiddleware = (
 ): void => {
   const normalizedError = normalizeError(err);
 
-  if (NODE_ENV !== "test") {
-    console.error({
-      traceId: req.traceId,
-      code: normalizedError.code,
-      statusCode: normalizedError.statusCode,
-      message: normalizedError.message,
-      details: normalizedError.details,
-      stack: normalizedError.stack,
-    });
-  }
+  logger.error({
+    traceId: req.traceId,
+    code: normalizedError.code,
+    statusCode: normalizedError.statusCode,
+    message: normalizedError.message,
+    details: normalizedError.details,
+    stack: normalizedError.stack,
+  }, "Request error");
 
   const payload: ErrorPayload = {
     success: false,

@@ -26,21 +26,25 @@ export const normalizeError = (error: unknown): AppError => {
   }
 
   if (error instanceof SyntaxError) {
-    return new AppError("Malformed JSON body", 400, ERROR_CODES.BAD_REQUEST);
+    return new AppError(
+      "Malformed JSON body",
+      400,
+      ERROR_CODES.INVALID_JSON_FORMAT
+    );
   }
 
   const err = error as UnknownError;
 
   if (err?.name === "ValidationError") {
     const details = getValidationDetails(err);
-    return new AppError("Validation failed", 400, ERROR_CODES.VALIDATION, details);
+    return new AppError("Validation failed", 400, ERROR_CODES.VALIDATION_FAILED, details);
   }
 
   if (err?.name === "CastError") {
     return new AppError(
       "Invalid identifier format",
       400,
-      ERROR_CODES.BAD_REQUEST,
+      ERROR_CODES.INVALID_REQUEST,
       err.path ? [{ field: err.path, message: "Invalid value" }] : undefined
     );
   }
@@ -50,12 +54,16 @@ export const normalizeError = (error: unknown): AppError => {
     return new AppError(
       "Duplicate value found",
       409,
-      ERROR_CODES.CONFLICT,
+      ERROR_CODES.RESOURCE_CONFLICT,
       duplicateField
         ? [{ field: duplicateField, message: `${duplicateField} already exists` }]
         : undefined
     );
   }
 
-  return new AppError(err?.message || "Internal Server Error", 500, ERROR_CODES.INTERNAL);
+  return new AppError(
+    err?.message || "Internal Server Error",
+    500,
+    ERROR_CODES.INTERNAL_SERVER_ERROR
+  );
 };

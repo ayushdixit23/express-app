@@ -12,7 +12,7 @@ export class AppError extends Error {
   constructor(
     public readonly message: string,
     public readonly statusCode: number = 500,
-    public readonly code: ErrorCode = ERROR_CODES.INTERNAL,
+    public readonly code: ErrorCode = ERROR_CODES.INTERNAL_SERVER_ERROR,
     public readonly details?: ErrorDetail[]
   ) {
     super(message);

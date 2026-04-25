@@ -14,7 +14,7 @@ export const getData = (_req: Request, res: Response): Response => {
 };
 
 export const getErrorDemo = (_req: Request, _res: Response): never => {
-  throw new AppError("Something went wrong!", 400, ERROR_CODES.BAD_REQUEST);
+  throw new AppError("Something went wrong!", 400, ERROR_CODES.INVALID_REQUEST);
 };
 
 export const queryData = async (req: Request, res: Response): Promise<Response> => {

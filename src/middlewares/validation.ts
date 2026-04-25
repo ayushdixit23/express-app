@@ -35,7 +35,7 @@ export const validateRequest = (schemas: RequestSchemas) => {
     } catch (error) {
       if (error instanceof ZodError) {
         const details = mapZodIssues(error);
-        next(new AppError("Validation failed", 400, ERROR_CODES.VALIDATION, details));
+        next(new AppError("Validation failed", 400, ERROR_CODES.VALIDATION_FAILED, details));
         return;
       }
 

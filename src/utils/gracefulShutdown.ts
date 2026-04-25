@@ -1,51 +1,41 @@
 import { Server } from "http";
 import { disconnectDb } from "../config/database.js";
+import { logger } from "./logger.js";
 
-/**
- * Gracefully shutdown the application
- * @param server - HTTP server instance
- */
 export const setupGracefulShutdown = (server: Server): void => {
   const shutdown = async (signal: string) => {
-    console.log(`\n⚠️  ${signal} received. Starting graceful shutdown...`);
+    logger.warn({ signal }, "Received shutdown signal, starting graceful shutdown");
 
-    // Stop accepting new connections
     server.close(async () => {
-      console.log("🔌 HTTP server closed");
+      logger.info("HTTP server closed");
 
       try {
-        // Close database connection
         await disconnectDb();
 
-        console.log("✅ All connections closed. Exiting process.");
+        logger.info("All connections closed, exiting process");
         process.exit(0);
       } catch (error) {
-        console.error("❌ Error during shutdown:", error);
+        logger.error({ err: error }, "Error during shutdown");
         process.exit(1);
       }
     });
 
-    // Force shutdown after timeout
     setTimeout(() => {
-      console.error("⚠️  Forced shutdown due to timeout");
+      logger.fatal("Forced shutdown due to timeout");
       process.exit(1);
-    }, 10000); // 10 seconds timeout
+    }, 10000);
   };
 
-  // Listen for termination signals
   process.on("SIGTERM", () => shutdown("SIGTERM"));
   process.on("SIGINT", () => shutdown("SIGINT"));
 
-  // Handle uncaught exceptions
   process.on("uncaughtException", (error: Error) => {
-    console.error("❌ Uncaught Exception:", error);
+    logger.fatal({ err: error }, "Uncaught Exception");
     shutdown("UNCAUGHT_EXCEPTION");
   });
 
-  // Handle unhandled promise rejections
   process.on("unhandledRejection", (reason: unknown, promise: Promise<unknown>) => {
-    console.error("❌ Unhandled Rejection at:", promise, "reason:", reason);
+    logger.fatal({ reason, promise }, "Unhandled Rejection");
     shutdown("UNHANDLED_REJECTION");
   });
 };
-
