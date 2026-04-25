@@ -4,17 +4,21 @@ import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { notFoundMiddleware } from "./middlewares/notFound.js";
 import { traceIdMiddleware } from "./middlewares/traceId.js";
 import { requestLogger } from "./middlewares/requestLogger.js";
+import { requestTimeout } from "./middlewares/requestTimeout.js";
 import {
   helmetMiddleware,
   corsMiddleware,
   rateLimitMiddleware,
   compressionMiddleware,
 } from "./config/middlewares/index.js";
+import setupSwagger from "./config/swagger.js";
 import allAppRoutes from "./routes/index.js";
 import rootRoutes from "./routes/root.routes.js";
 
 const createApp = (): express.Application => {
   const app = express();
+
+  app.use(requestTimeout);
 
   app.use(helmetMiddleware());
 
@@ -34,6 +38,8 @@ const createApp = (): express.Application => {
   if (NODE_ENV === "production") {
     app.set("trust proxy", 1);
   }
+
+  setupSwagger(app);
 
   app.use("/", rootRoutes);
 
