@@ -1,9 +1,9 @@
-import express, { Request, Response } from "express";
-import { 
-  NODE_ENV, 
+import express, { NextFunction, Request, Response } from "express";
+import {
+  NODE_ENV,
   ALLOWED_ORIGINS,
   RATE_LIMIT_WINDOW_MS,
-  RATE_LIMIT_MAX_REQUESTS
+  RATE_LIMIT_MAX_REQUESTS,
 } from "./config/env.js";
 import morgan from "morgan";
 import cors from "cors";
@@ -12,6 +12,10 @@ import compression from "compression";
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import { rateLimit } from "express-rate-limit";
 import routes from "./routes/index.js";
+import { traceIdMiddleware } from "./middlewares/traceId.js";
+import { SuccessResponse } from "./core/responses/SuccessResponse.js";
+import { AppError } from "./core/errors/AppError.js";
+import { ERROR_CODES } from "./core/errors/errorCodes.js";
 
 /**
  * Initialize Express application with all middleware and routes
@@ -24,13 +28,24 @@ const createApp = (): express.Application => {
   // Security middleware - must be first
   app.use(helmet());
 
+  // Attach request trace id for observability
+  app.use(traceIdMiddleware);
+
   // Rate limiting middleware
   const limiter = rateLimit({
     windowMs: RATE_LIMIT_WINDOW_MS,
     limit: RATE_LIMIT_MAX_REQUESTS,
     standardHeaders: "draft-8",
     legacyHeaders: false,
-    message: "Too many requests from this IP, please try again later.",
+    handler: (req, _res, next) => {
+      next(
+        new AppError(
+          "Too many requests from this IP, please try again later.",
+          429,
+          ERROR_CODES.RATE_LIMIT
+        )
+      );
+    },
   });
   app.use(limiter);
 
@@ -53,7 +68,7 @@ const createApp = (): express.Application => {
         if (!origin || ALLOWED_ORIGINS.includes(origin)) {
           callback(null, true);
         } else {
-          callback(new Error("Not allowed by CORS"));
+          callback(null, false);
         }
       },
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -68,25 +83,28 @@ const createApp = (): express.Application => {
   }
 
   // Root route
-  app.get("/", (_req: Request, res: Response) => {
-    res.status(200).json({
+  app.get("/", (req: Request, res: Response) => {
+    return new SuccessResponse("Server metadata retrieved", {
       message: "🚀 Express API Server",
       version: "1.0.0",
       environment: NODE_ENV,
       timestamp: new Date().toISOString(),
-    });
+    }).send(req, res);
   });
 
   // Mount API routes
   app.use("/", routes);
 
   // 404 Handler for non-existent routes
-  app.use((_req: Request, res: Response) => {
-    res.status(404).json({ 
-      success: false,
-      message: "Route not found",
-      statusCode: 404
-    });
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    next(
+      new AppError("Route not found", 404, ERROR_CODES.NOT_FOUND, [
+        {
+          field: "path",
+          message: `Cannot ${req.method} ${req.originalUrl}`,
+        },
+      ])
+    );
   });
 
   // Error Handling Middleware (must be last)
@@ -96,4 +114,3 @@ const createApp = (): express.Application => {
 };
 
 export default createApp;
-

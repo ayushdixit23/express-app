@@ -7,7 +7,7 @@ type AsyncRequestHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => Promise<void | Response>;
+) => void | Response | Promise<void | Response>;
 
 /**
  * Wrapper for async route handlers to catch errors and pass them to error middleware

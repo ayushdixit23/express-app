@@ -1,27 +1,38 @@
-import { Request, Response, NextFunction } from 'express';
-import { ErrorResponse } from './responseHandler.js';
+import { Request, Response, NextFunction } from "express";
+import { normalizeError } from "../core/errors/errorHandler.js";
+import { ErrorPayload } from "../core/responses/ApiResponse.js";
+import { NODE_ENV } from "../config/env.js";
 
 export const errorMiddleware = (
-  err: Error | ErrorResponse,
+  err: unknown,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
-  // Convert to ErrorResponse if it's a generic error
-  if (!(err instanceof ErrorResponse)) {
-    err = new ErrorResponse(err.message || 'Internal Server Error', 500);
+  const normalizedError = normalizeError(err);
+
+  if (NODE_ENV !== "test") {
+    console.error({
+      traceId: req.traceId,
+      code: normalizedError.code,
+      statusCode: normalizedError.statusCode,
+      message: normalizedError.message,
+      details: normalizedError.details,
+      stack: normalizedError.stack,
+    });
   }
 
-  // Log the error (for debugging or tracking purposes)
-  console.error(err);
+  const payload: ErrorPayload = {
+    success: false,
+    message: normalizedError.message,
+    error: {
+      code: normalizedError.code,
+      message: normalizedError.message,
+      traceId: req.traceId ?? "unknown",
+      ...(normalizedError.details && { details: normalizedError.details }),
+    },
+    statusCode: normalizedError.statusCode,
+  };
 
-  // Send error response using ErrorResponse properties
-  const errorResponse = err as ErrorResponse;
-  
-  res.status(errorResponse.statusCode).json({
-    success: errorResponse.success,
-    message: errorResponse.message,
-    statusCode: errorResponse.statusCode,
-    ...(errorResponse.data && { data: errorResponse.data })
-  });
+  res.status(normalizedError.statusCode).json(payload);
 };
