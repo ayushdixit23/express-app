@@ -5,6 +5,8 @@ import { notFoundMiddleware } from "./middlewares/notFound.js";
 import { traceIdMiddleware } from "./middlewares/traceId.js";
 import { requestLogger } from "./middlewares/requestLogger.js";
 import { requestTimeout } from "./middlewares/requestTimeout.js";
+import { sanitizeMiddleware } from "./middlewares/sanitize.js";
+import { securityMonitor } from "./middlewares/securityMonitor.js";
 import {
   helmetMiddleware,
   corsMiddleware,
@@ -32,6 +34,12 @@ const createApp = (): express.Application => {
 
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+  app.use(sanitizeMiddleware);
+
+  if (NODE_ENV === "production") {
+    app.use(securityMonitor);
+  }
 
   app.use(corsMiddleware());
 

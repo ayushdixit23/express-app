@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from "express";
+import { AppError } from "../core/errors/AppError.js";
+import { ERROR_CODES } from "../core/errors/errorCodes.js";
 
 export const requestTimeout = (
   req: Request,
@@ -10,16 +12,12 @@ export const requestTimeout = (
   const timer = setTimeout(() => {
     clearTimeout(timer);
     if (!res.writableEnded) {
-      res.status(408).json({
-        success: false,
-        message: "Request timeout",
-        error: {
-          code: "REQUEST_TIMEOUT",
-          message: "Request timeout after 60 seconds",
-          traceId: req.traceId,
-        },
-        statusCode: 408,
-      });
+      const error = new AppError(
+        "Request timeout after 60 seconds",
+        408,
+        ERROR_CODES.TOO_MANY_REQUESTS
+      );
+      next(error);
     }
   }, timeout);
 
