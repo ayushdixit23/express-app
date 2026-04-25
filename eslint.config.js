@@ -1,14 +1,21 @@
+import globals from "globals";
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+
 export default [
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    ignores: ["dist/", "node_modules/", "coverage/", "src/types/"],
+  },
   {
     files: ["**/*.ts"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
-      parser: await import("typescript-eslint"),
-    },
-    plugins: {
-      "@typescript-eslint": await import("@typescript-eslint"),
-      "import": await import("import"),
+      globals: {
+        ...globals.node,
+      },
     },
     rules: {
       "no-unused-vars": "off",
@@ -20,18 +27,8 @@ export default [
           caughtErrorsIgnorePattern: "^_",
         },
       ],
-      "@typescript-eslint/no-explicit-any": "warn",
-      "import/extensions": [
-        "error",
-        "ignorePackages",
-        {
-          ts: "never",
-        },
-      ],
-      "no-console": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
+      "no-console": "off",
     },
-  },
-  {
-    ignores: ["dist/", "node_modules/", "coverage/"],
   },
 ];

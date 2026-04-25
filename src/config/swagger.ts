@@ -1,9 +1,10 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import path from "path";
 import yaml from "yaml";
 import { NODE_ENV } from "./env.js";
+import { logger } from "../utils/logger.js";
 
 const setupSwagger = (app: express.Application): void => {
   if (NODE_ENV === "production") {
@@ -17,8 +18,7 @@ const setupSwagger = (app: express.Application): void => {
 
     app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Failed to load OpenAPI spec:", error);
+    logger.error({ err: error }, "Failed to load OpenAPI spec");
   }
 };
 
