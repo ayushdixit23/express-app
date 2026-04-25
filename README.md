@@ -1,442 +1,144 @@
-# Express App Template (TypeScript & MongoDB)
+# Express API Server
 
-## Overview
-A production-ready Express.js starter template with TypeScript and MongoDB. This template provides a solid foundation with modern best practices, class-based response system, comprehensive error handling, security enhancements, and graceful shutdown mechanisms.
+Production-ready Express.js API with TypeScript, MongoDB, and comprehensive security.
 
----
+## Quick Start
 
-## ✨ Features
-
-### Core Technologies
-- **TypeScript** (v5.9.3): Full type safety with modern JavaScript features
-- **Express.js** (v5.1.0): Fast, unopinionated web framework
-- **MongoDB**: NoSQL database with Mongoose ODM (v8.19.2)
-- **Morgan** (v1.10.1): HTTP request logger
-- **Node.js** (v16 or higher recommended, v18+ for optimal performance)
-
-### Production-Ready Features
-- ✅ **Class-Based Response System**: Clean API responses with `SuccessResponse` and `ErrorResponse`
-- ✅ **Environment Validation**: Type-safe configuration with validation
-- ✅ **Security**: Helmet.js for security headers, CORS configuration
-- ✅ **Rate Limiting**: Protection against brute-force attacks
-- ✅ **Error Handling**: Centralized error handling with custom error classes
-- ✅ **Compression**: HTTP response compression for better performance
-- ✅ **Health Checks**: Kubernetes/Docker-ready health endpoints
-- ✅ **Graceful Shutdown**: Proper cleanup of connections on termination
-- ✅ **Request Logging**: Environment-based logging (dev/production)
-- ✅ **Async Handler**: Automatic error catching for async routes
-- ✅ **Modular Routes**: Clean, organized route structure
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js (v18 or higher recommended)
-- npm or yarn
-- MongoDB (local or remote instance)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/ayushdixit23/express-app
-   cd express-app
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Set up environment variables**
-   - Copy `env.example` to `.env`:
-   ```bash
-   cp env.example .env
-   ```
-   
-   - Update `.env` with your configuration:
-   ```env
-   # Server Configuration
-   PORT=5000
-   NODE_ENV=development
-   
-   # MongoDB Configuration
-   MONGO_URI=mongodb://localhost:27017/your-database
-   
-   # CORS Configuration
-   ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
-   
-   # Rate Limiting
-   RATE_LIMIT_WINDOW_MS=900000
-   RATE_LIMIT_MAX_REQUESTS=400
-   ```
-
-4. **Run the application**
-   ```bash
-   npm run dev
-   ```
-
----
-
-## 📁 Project Structure
-
-```
-express-app/
-├── src/
-│   ├── config/               # Configuration files
-│   │   ├── database.ts       # MongoDB connection with event handlers
-│   │   └── env.ts            # Environment configuration
-│   ├── middlewares/          # Custom middleware
-│   │   ├── errorMiddleware.ts    # Error handling middleware
-│   │   ├── responseHandler.ts    # Success & Error response classes
-│   │   └── tryCatch.ts       # Async error wrapper
-│   ├── routes/               # Route definitions
-│   │   ├── index.ts          # Main router
-│   │   ├── api.routes.ts     # API routes
-│   │   └── health.routes.ts  # Health check routes
-│   ├── utils/                # Utility functions
-│   │   └── gracefulShutdown.ts   # Shutdown handler
-│   ├── app.ts                # Express application configuration
-│   └── index.ts              # Application entry point (server startup)
-├── dist/                     # Compiled JavaScript (generated)
-├── env.example               # Environment variables template
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
----
-
-## 🎯 API Response System
-
-### Class-Based Response Architecture
-
-#### Success Response
-```typescript
-import { SuccessResponse } from "../middlewares/responseHandler.js";
-
-router.get("/users/:id", asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
-  return new SuccessResponse("User retrieved successfully", user).send(res);
-}));
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "User retrieved successfully",
-  "statusCode": 200,
-  "data": {
-    "id": 1,
-    "name": "John Doe"
-  }
-}
-```
-
-#### Error Response
-```typescript
-import { ErrorResponse } from "../middlewares/responseHandler.js";
-
-if (!user) {
-  throw new ErrorResponse("User not found", 404);
-}
-```
-
-**Response:**
-```json
-{
-  "success": false,
-  "message": "User not found",
-  "statusCode": 404
-}
-```
-
-#### Status Codes
-```typescript
-// 200 OK - Success
-new SuccessResponse("Operation successful", data).send(res);
-
-// 201 Created - Resource created
-new SuccessResponse("User created", newUser, 201).send(res);
-
-// 400 Bad Request
-throw new ErrorResponse("Invalid input", 400);
-
-// 404 Not Found
-throw new ErrorResponse("Resource not found", 404);
-
-// 500 Internal Server Error
-throw new ErrorResponse("Server error", 500);
-```
-
----
-
-## 📡 API Endpoints
-
-### Health Checks
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Full health check with service status |
-| `/health/live` | GET | Liveness probe (Kubernetes) |
-| `/health/ready` | GET | Readiness probe (checks dependencies) |
-
-### API Routes
-| Endpoint | Method | Description | Status |
-|----------|--------|-------------|--------|
-| `/api/data` | GET | Sample data endpoint | 200 |
-| `/api/query` | GET | Async database query example | 200 |
-| `/api/users` | POST | Create user | 201 |
-| `/api/users/:id` | PUT | Update user | 200 |
-| `/api/users/:id` | DELETE | Delete user | 200 |
-| `/api/posts` | GET | Paginated posts | 200 |
-| `/api/stats` | GET | Statistics | 200 |
-| `/api/error` | GET | Error handling demo | 400 |
-
-### Root
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | API information and status |
-
----
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `PORT` | Server port | `5000` | No |
-| `NODE_ENV` | Environment (development/production) | `development` | No |
-| `MONGO_URI` | MongoDB connection string | - | Yes |
-| `ALLOWED_ORIGINS` | CORS allowed origins (comma-separated) | `localhost:3000,localhost:3001` | No |
-| `RATE_LIMIT_WINDOW_MS` | Rate limit window in milliseconds | `900000` (15 min) | No |
-| `RATE_LIMIT_MAX_REQUESTS` | Max requests per window | `400` | No |
-
----
-
-## 💻 Usage Examples
-
-### Creating a New Route
-
-```typescript
-import { Router } from "express";
-import asyncHandler from "../middlewares/tryCatch.js";
-import { SuccessResponse, ErrorResponse } from "../middlewares/responseHandler.js";
-
-const router = Router();
-
-router.get("/users/:id", asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
-  
-  if (!user) {
-    throw new ErrorResponse("User not found", 404);
-  }
-  
-  return new SuccessResponse("User found", user).send(res);
-}));
-
-export default router;
-```
-
-### Pagination Example
-
-```typescript
-router.get("/posts", asyncHandler(async (req, res) => {
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-  
-  const posts = await Post.find()
-    .skip((page - 1) * limit)
-    .limit(limit);
-  
-  const total = await Post.countDocuments();
-  
-  const responseData = {
-    posts,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-      hasNext: page < Math.ceil(total / limit),
-      hasPrevious: page > 1
-    }
-  };
-  
-  return new SuccessResponse("Posts retrieved", responseData).send(res);
-}));
-```
-
----
-
-## 🛡️ Security Features
-
-- **Helmet.js**: Sets security-related HTTP headers
-- **CORS**: Configurable Cross-Origin Resource Sharing
-- **Rate Limiting**: Prevents brute-force attacks (400 requests per 15 minutes)
-- **Input Validation**: Type-safe request handling with TypeScript
-- **Error Sanitization**: Prevents information leakage
-
----
-
-## 🔄 Graceful Shutdown
-
-The application handles graceful shutdowns on:
-- `SIGTERM` - Kubernetes/Docker termination
-- `SIGINT` - Manual interruption (Ctrl+C)
-- `uncaughtException` - Unhandled exceptions
-- `unhandledRejection` - Unhandled promise rejections
-
-**Shutdown Process:**
-1. Stop accepting new requests
-2. Close database connections
-3. Exit process cleanly
-
----
-
-## 🧪 Testing
-
-### Start the server
 ```bash
+npm install
+cp env.example .env
 npm run dev
 ```
 
-### Test endpoints
+Server runs on `http://localhost:5001`
+
+## Tech Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Node.js | 18+ | Runtime (ES Modules) |
+| Express | 5.x | Web framework |
+| TypeScript | 6.x | Strict typing |
+| MongoDB | 6+ | Database |
+| Mongoose | 8.x | ODM |
+| Zod | 4.x | Validation |
+| Pino | 10.x | Logging |
+
+## Features
+
+- **Security**: Helmet (CSP, HSTS), Input Sanitization, Security Monitoring
+- **Rate Limiting**: 400 requests/15min (configurable)
+- **Request Timeout**: 60 seconds
+- **Database Pooling**: 50 max, 5 min connections
+- **Error Handling**: RFC 7807 Problem Details format
+- **Logging**: Pino (pretty in dev, JSON in prod)
+- **Trace IDs**: Request tracing across logs
+- **Swagger**: API docs in development
+
+## Project Structure
+
+```
+src/
+├── config/           # env, database, middlewares config
+├── controllers/     # Route handlers (MVC)
+├── core/errors/     # AppError, errorCodes
+├── core/responses/ # SuccessResponse
+├── core/validation/schemas/  # Zod schemas
+├── middlewares/    # Security, validation, logging
+├── routes/         # Express routes
+├── services/       # Business logic
+└── utils/         # Logger, graceful shutdown
+```
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Server info |
+| `/health` | GET | Health + system metrics |
+| `/health/live` | GET | Liveness probe |
+| `/health/ready` | GET | Readiness probe |
+| `/api/data` | GET | Sample data |
+| `/api/users` | POST | Create user |
+| `/api/users/:id` | PUT | Update user |
+| `/api/users/:id` | DELETE | Delete user |
+| `/api/posts` | GET | Paginated posts |
+| `/api/stats` | GET | Statistics |
+
+## Response Formats
+
+**Success:**
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": { "id": 1, "name": "John" },
+  "metadata": { "timestamp": "...", "traceId": "abc-123" }
+}
+```
+
+**Error:**
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "error": { "code": "VALIDATION_FAILED", "message": "...", "traceId": "abc-123", "details": [...] },
+  "statusCode": 400
+}
+```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | 5001 | Server port |
+| `NODE_ENV` | development | Environment |
+| `MONGO_URI` | mongodb://localhost:27017/express-app | MongoDB |
+| `ALLOWED_ORIGINS` | localhost:3000,localhost:3001 | CORS origins |
+| `RATE_LIMIT_MAX_REQUESTS` | 400 | Max requests/15min |
+| `MONGO_MAX_POOL_SIZE` | 50 | Max DB connections |
+| `MONGO_MIN_POOL_SIZE` | 5 | Min DB connections |
+
+## Scripts
 
 ```bash
-# Health check
-curl http://localhost:5000/health
+npm run dev       # Development (hot reload)
+npm run build    # TypeScript build
+npm start        # Production server
+npm run lint     # ESLint check
+npm run format  # Prettier format
+```
 
-# Get data
-curl http://localhost:5000/api/data
+## Testing
+
+```bash
+# Health
+curl http://localhost:5001/health
 
 # Create user
-curl -X POST http://localhost:5000/api/users \
+curl -X POST http://localhost:5001/api/users \
   -H "Content-Type: application/json" \
-  -d '{"name":"John Doe","email":"john@example.com"}'
+  -d '{"name":"John","email":"john@example.com"}'
 
 # Paginated posts
-curl http://localhost:5000/api/posts?page=1&limit=5
-
-# Error handling
-curl http://localhost:5000/api/error
+curl "http://localhost:5001/api/posts?page=1&limit=5"
 ```
 
----
+## Swagger
 
-## 🚀 Deployment
+Visit `http://localhost:5001/api-docs` in development
 
-### Build for production
-```bash
-npm run build
-```
+## Security Headers
 
-### Start production server
-```bash
-npm start
-```
+- `Strict-Transport-Security` (HSTS) - 1 year
+- `Content-Security-Policy` (CSP)
+- `Cross-Origin-Opener-Policy`
+- `Cross-Origin-Resource-Policy`
+- `Referrer-Policy`
 
-### Docker Example
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-EXPOSE 5000
-CMD ["npm", "start"]
-```
+## Production
 
-> **Note**: Using Node.js 20 LTS for better performance and long-term support. Compatible with Node.js 18+.
-
-### Environment Setup
-- Set `NODE_ENV=production`
-- Use environment-specific `.env` files
-- Ensure MongoDB and other services are accessible
-
----
-
-## 📝 Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with hot-reload (tsx + nodemon) |
-| `npm run build` | Compile TypeScript to JavaScript |
-| `npm start` | Run production server |
-| `npm run clean` | Remove build artifacts |
-
----
-
-## 🏗️ Architecture Highlights
-
-### Middleware Stack
-```
-Request
-  ↓
-Security (Helmet)
-  ↓
-Rate Limiting
-  ↓
-Logging (Morgan)
-  ↓
-Compression
-  ↓
-Body Parsing
-  ↓
-CORS
-  ↓
-Routes
-  ↓
-asyncHandler (catches errors)
-  ↓
-Route Handler
-  ├─→ Success → SuccessResponse.send(res) → Client ✅
-  └─→ Error → throw ErrorResponse → errorMiddleware → Client ❌
-```
-
-### Response Flow
-```
-Success:
-  return new SuccessResponse("message", data).send(res);
-  → { success: true, message: "...", statusCode: 200, data: {...} }
-
-Error:
-  throw new ErrorResponse("message", 400);
-  → errorMiddleware catches it
-  → { success: false, message: "...", statusCode: 400 }
-```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
----
-
-## 📄 License
-
-This project is open source and available under the [ISC License](LICENSE).
-
----
-
-## 🙏 Acknowledgments
-
-Built with best practices from the Node.js and Express.js communities.
-
----
-
-## 📞 Support
-
-If you encounter any issues:
-1. Check the README.md for documentation
-2. Verify your `.env` file is properly configured
-3. Check the logs for detailed error messages
-4. Ensure MongoDB is running and accessible
-
----
-
-**Happy Coding! 🎉**
+Set `NODE_ENV=production` to enable:
+- Trust proxy
+- Security monitoring
+- JSON logging
